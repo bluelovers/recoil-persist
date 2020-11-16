@@ -1,4 +1,18 @@
+import { MutableSnapshot } from 'recoil'
+// @ts-ignore
 import { useTransactionObservation_UNSTABLE } from 'recoil'
+
+export interface IRecoilPersistConfig
+{
+  /**
+   * The default key to use in local storage
+   */
+  key?: string,
+  /**
+   * Can be set as `sessionStorage` or `localStorage`. Defaults value is `localStorage`.
+   */
+  storage?: Storage,
+}
 
 /**
  * Recoil module to persist state to passed storage (it use localStorage by default)
@@ -11,44 +25,66 @@ import { useTransactionObservation_UNSTABLE } from 'recoil'
  * @param {Storage} [config.storage] Can be set as `sessionStorage` or
  *    `localStorage`. Defaults value is `localStorage`.
  */
-export function recoilPersist(paths = [], config = {}) {
+export function recoilPersist(paths: string[] = [], config: IRecoilPersistConfig = {})
+{
   const key = config.key || 'recoil-persist'
   const storage = config.storage || localStorage
 
-  function RecoilPersist() {
+  function RecoilPersist(): null
+  {
+    // @ts-ignore
     useTransactionObservation_UNSTABLE(persistState)
     return null
   }
 
-  function persistState(event) {
-    const toStore = {}
-    event.atomValues.forEach((value, atomName) => {
+  function persistState<V extends any>(event: {
+    atomValues: Map<string, V>
+  })
+  {
+    const toStore: Record<string, V> = {}
+    event.atomValues.forEach((value, atomName) =>
+    {
       const name = atomName.split('__')[0]
-      if (paths.length === 0 || paths.includes(name)) {
+      if (paths.length === 0 || paths.includes(name))
+      {
         toStore[name] = value
       }
     })
-    try {
+    try
+    {
       storage.setItem(key, JSON.stringify(toStore))
-    } catch (e) {}
+    }
+    catch (e)
+    {}
   }
 
-  function updateState({ set }) {
+  function updateState({ set }: MutableSnapshot)
+  {
     const toParse = storage.getItem(key)
-    let state
-    try {
+    let state: any
+    try
+    {
       state = JSON.parse(toParse)
-    } catch (e) {
+    }
+    catch (e)
+    {
       return
     }
-    if (state === null) {
+    if (state === null)
+    {
       return
     }
-    Object.keys(state).forEach((key) => {
-      if (paths.length === 0 || paths.includes(key)) {
-        try {
+    Object.keys(state).forEach((key) =>
+    {
+      if (paths.length === 0 || paths.includes(key))
+      {
+        try
+        {
+          // @ts-ignore
           set({ key }, state[key])
-        } catch (e) {}
+        }
+        catch (e)
+        {}
       }
     })
   }
